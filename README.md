@@ -1,14 +1,15 @@
 # printb
 
-Cute little command for visualizing binary blobs. Which can lend insight into
-structure at a glance.
+Visualize binary blobs as a fixed-width grid (quick structure inspection).
 
-Dual-licensed under MIT or the [UNLICENSE](https://unlicense.org).
+## Example
 
-```sh
+```bash
 printb song.mp3 -n 1000 -w 32 -o examples/image.png
 ```
 
-<p align="center">
-  <img src="examples/image.png"/img>
-</p>
+Output is written to `examples/image.png`.
+
+## License
+
+Dual-licensed under MIT or the UNLICENSE.
