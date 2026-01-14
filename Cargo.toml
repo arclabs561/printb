@@ -3,6 +3,9 @@ name = "printb"
 version = "0.1.0"
 authors = ["Henry Wallace <henry@henrywallace.io>"]
 edition = "2018"
+description = "Visualize binary blobs as fixed-width grid images"
+repository = "https://github.com/arclabs561/printb"
+license = "MIT OR Unlicense"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
