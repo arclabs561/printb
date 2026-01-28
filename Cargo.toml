@@ -12,3 +12,5 @@ license = "MIT OR Unlicense"
 [dependencies]
 clap = "2.33.0"
 image = "0.23.3"
+
+[workspace]

@@ -31,8 +31,8 @@ fn print_file(path: &str, limit: Option<u64>, width: u32, out: &str) -> io::Resu
             image::Luma([0u8])
         }
     });
-    img = imageops::resize(&mut img, 16 * w, 16 * h, imageops::FilterType::Nearest);
-    img = imageops::rotate90(&mut img);
+    img = imageops::resize(&img, 16 * w, 16 * h, imageops::FilterType::Nearest);
+    img = imageops::rotate90(&img);
     img.save(out).unwrap();
     Ok(())
 }
@@ -41,10 +41,9 @@ fn main() {
     let matches = App::new("printb")
         .arg(
             Arg::with_name("file")
-                .short("f")
                 .help("binary filepath to print")
-                .takes_value(true)
-                .required(true),
+                .required(true)
+                .index(1),
         )
         .arg(
             Arg::with_name("width")
@@ -70,9 +69,7 @@ fn main() {
 
     let file = matches.value_of("file").unwrap();
     let width = matches.value_of("width").unwrap();
-    let limit = matches
-        .value_of("limit")
-        .and_then(|n| Some(n.parse::<u64>().unwrap()));
+    let limit = matches.value_of("limit").map(|n| n.parse::<u64>().unwrap());
     let out = matches.value_of("out").unwrap();
 
     print_file(file, limit, width.parse().unwrap(), out).unwrap();
