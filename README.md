@@ -6,7 +6,9 @@ A binary file has shape. Padding, strings, tables, compressed regions, and
 patches leave different byte textures. `printb` gives a quick picture of that
 shape without knowing the file format.
 
-![Color rendering of a synthetic binary with padding, text, control bytes, high-byte data, and 0xff regions](examples/image.png)
+<p align="center">
+  <img src="examples/image.png" alt="Color rendering of a synthetic binary with padding, text, control bytes, high-byte data, and 0xff regions">
+</p>
 
 Black is null padding, green is control bytes, blue is printable ASCII, red is
 high-byte data, and white is `0xff`.
