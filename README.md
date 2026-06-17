@@ -21,10 +21,21 @@ cargo build --release
 ## Usage
 
 ```bash
-printb target/debug/printb -s 3500000 -n 4096 -w 64 -o examples/image.png
+perl - <<'PL' > target/example-before.bin
+binmode STDOUT;
+print "\0" x 512;
+print "printb metadata section .text .rodata strings\n" x 13;
+print chr($_ % 32) for 0..511;
+print chr(128 + (($_ * 37) % 96)) for 0..1023;
+print "\xff" x 512;
+print "usage: printb input.bin -n 4096 -w 64 -o image.png\n" x 10;
+print "\0" x 496;
+PL
+
+printb target/example-before.bin -n 4096 -w 64 -o examples/image.png
 ```
 
-![Color rendering of a byte range from the printb binary](examples/image.png)
+![Color rendering of a synthetic binary with padding, text, control bytes, high-byte data, and 0xff regions](examples/image.png)
 
 The `-s` flag skips bytes before rendering, `-n` limits how many bytes are read,
 `-w` sets the byte-grid width, and `-o` sets the output path.
@@ -35,28 +46,35 @@ Binary images are useful when the exact bytes matter but a hex dump is too narro
 to scan. A small byte-level change can become a visible block, band, or repeated
 pattern.
 
-This example renders the same byte range from `printb`, then from a copy with an
-ASCII marker patched into that range:
+This example renders the same synthetic binary, then a second version with an
+ASCII marker patched into the high-byte region:
 
 ```bash
-cp target/debug/printb target/printb-patched
-perl -e 'open my $f, "+<", "target/printb-patched" or die $!; binmode $f; seek $f, 3500000, 0; print $f ("PRINTB-DEMO-ASCII-PATCH\0" x 170); close $f;'
+cp target/example-before.bin target/example-after.bin
+perl - <<'PL'
+open my $f, "+<", "target/example-after.bin" or die $!;
+binmode $f;
+seek $f, 1536, 0;
+print $f ("PATCHED-VERSION\0" x 64);
+close $f;
+PL
 
-printb target/debug/printb -s 3500000 -n 4096 -w 64 -o examples/image.png
-printb target/printb-patched -s 3500000 -n 4096 -w 64 -o examples/patched.png
+printb target/example-before.bin -n 4096 -w 64 -o examples/image.png
+printb target/example-after.bin -n 4096 -w 64 -o examples/patched.png
 ```
 
-Unmodified slice:
+Before:
 
-![Unmodified byte range from the printb binary](examples/image.png)
+![Synthetic binary before patching](examples/image.png)
 
-Patched slice:
+After:
 
 ![The same byte range after patching in a repeated ASCII marker](examples/patched.png)
 
-The patched image exposes the repeated marker as a regular diagonal pattern. The
-same trick can help inspect packed regions, appended payloads, stripped symbols,
-or unexpected changes between builds.
+The patched image exposes the inserted marker as a blue block inside a region
+that was previously high-byte data. The same trick can help inspect packed
+regions, appended payloads, stripped symbols, or unexpected changes between
+builds.
 
 ## Related Work
 
@@ -73,6 +91,10 @@ examples include Battelle's
 Stairwell's
 [Hilbert-curve malware-analysis writeup](https://stairwell.com/blog/hilbert-curves-visualizing-binary-files-with-color-and-patterns/),
 and 8dcc's [`bin-graph`](https://github.com/8dcc/bin-graph).
+
+`printb` is deliberately smaller than those tools: it writes a fixed-width PNG
+from bytes on disk and leaves interactive navigation, digraph plots, and
+Hilbert-curve layouts to heavier analyzers.
 
 ## License
 
