@@ -3,7 +3,7 @@ name = "printb"
 version = "0.1.0"
 authors = ["Henry Wallace <henry@henrywallace.io>"]
 edition = "2018"
-description = "Visualize binary blobs as fixed-width grid images"
+description = "Render binary files as color images"
 repository = "https://github.com/arclabs561/printb"
 license = "MIT OR Unlicense"
 
