@@ -8,6 +8,8 @@ use std::io;
 use std::io::prelude::*;
 use std::io::SeekFrom;
 
+const PIXEL_SCALE: u32 = 8;
+
 fn file_handle(limit: Option<u64>, skip: u64, path: &str) -> io::Result<Box<dyn Read>> {
     let mut f = File::open(path)?;
     f.seek(SeekFrom::Start(skip))?;
@@ -49,7 +51,12 @@ fn print_file(path: &str, limit: Option<u64>, skip: u64, width: u32, out: &str) 
             byte_color(0)
         }
     });
-    img = imageops::resize(&img, 16 * w, 16 * h, imageops::FilterType::Nearest);
+    img = imageops::resize(
+        &img,
+        PIXEL_SCALE * w,
+        PIXEL_SCALE * h,
+        imageops::FilterType::Nearest,
+    );
     img = imageops::rotate90(&img);
     img.save(out).map_err(io::Error::other)?;
     Ok(())
