@@ -1,7 +1,4 @@
-extern crate clap;
-extern crate image;
-
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use image::{imageops, ImageBuffer, Rgb};
 use std::fs::File;
 use std::io;
@@ -63,48 +60,54 @@ fn print_file(path: &str, limit: Option<u64>, skip: u64, width: u32, out: &str) 
 }
 
 fn main() -> io::Result<()> {
-    let matches = App::new("printb")
+    let matches = Command::new("printb")
         .arg(
-            Arg::with_name("file")
+            Arg::new("file")
                 .help("binary filepath to print")
                 .required(true)
                 .index(1),
         )
         .arg(
-            Arg::with_name("width")
-                .short("w")
+            Arg::new("width")
+                .short('w')
                 .help("number of bytes image width")
-                .takes_value(true)
+                .num_args(1)
                 .default_value("64"),
         )
         .arg(
-            Arg::with_name("limit")
-                .short("n")
+            Arg::new("limit")
+                .short('n')
                 .help("limit number of bytes to read")
-                .takes_value(true),
+                .num_args(1),
         )
         .arg(
-            Arg::with_name("skip")
-                .short("s")
+            Arg::new("skip")
+                .short('s')
                 .long("skip")
                 .help("number of bytes to skip before rendering")
-                .takes_value(true)
+                .num_args(1)
                 .default_value("0"),
         )
         .arg(
-            Arg::with_name("out")
-                .short("o")
+            Arg::new("out")
+                .short('o')
                 .help("out file path to save image")
-                .takes_value(true)
+                .num_args(1)
                 .default_value("image.png"),
         )
         .get_matches();
 
-    let file = matches.value_of("file").unwrap();
-    let width = matches.value_of("width").unwrap();
-    let limit = matches.value_of("limit").map(|n| n.parse::<u64>().unwrap());
-    let skip = matches.value_of("skip").unwrap().parse::<u64>().unwrap();
-    let out = matches.value_of("out").unwrap();
+    let file = matches.get_one::<String>("file").unwrap();
+    let width = matches.get_one::<String>("width").unwrap();
+    let limit = matches
+        .get_one::<String>("limit")
+        .map(|n| n.parse::<u64>().unwrap());
+    let skip = matches
+        .get_one::<String>("skip")
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
+    let out = matches.get_one::<String>("out").unwrap();
 
     print_file(file, limit, skip, width.parse().unwrap(), out)
 }
