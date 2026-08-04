@@ -1,4 +1,5 @@
 repository:
   description: Render binary files as color images
+  default_branch: main
   private: false
   topics: binary-analysis, reverse-engineering, visualization, rust
