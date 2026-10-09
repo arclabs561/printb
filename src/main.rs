@@ -26,6 +26,22 @@ fn byte_color(byte: u8) -> Rgb<u8> {
     }
 }
 
+/// Lay `buf` out row-major: byte `i` is at column `i % width`, row `i / width`,
+/// each drawn as a `PIXEL_SCALE` square. Missing tail bytes render as 0x00.
+fn render(buf: &[u8], width: u32) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
+    let w = width;
+    let h = (buf.len() as f32 / w as f32).ceil() as u32;
+    let img = ImageBuffer::from_fn(w, h, |x, y| {
+        byte_color(buf.get((y * w + x) as usize).copied().unwrap_or(0))
+    });
+    imageops::resize(
+        &img,
+        PIXEL_SCALE * w,
+        PIXEL_SCALE * h,
+        imageops::FilterType::Nearest,
+    )
+}
+
 fn print_file(path: &str, limit: Option<u64>, skip: u64, width: u32, out: &str) -> io::Result<()> {
     let mut f = file_handle(limit, skip, path)?;
     let mut buf = vec![];
@@ -37,24 +53,7 @@ fn print_file(path: &str, limit: Option<u64>, skip: u64, width: u32, out: &str) 
             "no bytes to render",
         ));
     }
-    let h: u32 = width;
-    let w = (n as f32 / h as f32).ceil() as u32;
-    buf.resize_with((w * h) as usize, Default::default);
-    let mut img = ImageBuffer::from_fn(w, h, |x, y| {
-        let i = (x * h + y) as usize;
-        if i < buf.len() {
-            byte_color(buf[i])
-        } else {
-            byte_color(0)
-        }
-    });
-    img = imageops::resize(
-        &img,
-        PIXEL_SCALE * w,
-        PIXEL_SCALE * h,
-        imageops::FilterType::Nearest,
-    );
-    img = imageops::rotate90(&img);
+    let img = render(&buf, width);
     img.save(out).map_err(io::Error::other)?;
     Ok(())
 }
@@ -114,7 +113,7 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{byte_color, print_file};
+    use super::{byte_color, print_file, render, PIXEL_SCALE};
     use image::Rgb;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -126,6 +125,19 @@ mod tests {
         assert_eq!(byte_color(b'A'), Rgb([32, 96, 161]));
         assert_eq!(byte_color(0x80), Rgb([128, 32, 32]));
         assert_eq!(byte_color(0xff), Rgb([255, 255, 255]));
+    }
+
+    #[test]
+    fn renders_bytes_row_major_left_to_right() {
+        // Width 3, two rows: 0xff is white, 0x00 black, 'A' = Rgb([32, 96, 161]).
+        let img = render(&[0xff, 0x00, b'A', 0x00, 0xff, 0x00], 3);
+        assert_eq!(img.dimensions(), (3 * PIXEL_SCALE, 2 * PIXEL_SCALE));
+        let px = |col: u32, row: u32| *img.get_pixel(col * PIXEL_SCALE, row * PIXEL_SCALE);
+        assert_eq!(px(0, 0), Rgb([255, 255, 255]));
+        assert_eq!(px(1, 0), Rgb([0, 0, 0]));
+        assert_eq!(px(2, 0), Rgb([32, 96, 161]));
+        assert_eq!(px(0, 1), Rgb([0, 0, 0]));
+        assert_eq!(px(1, 1), Rgb([255, 255, 255]));
     }
 
     #[test]
