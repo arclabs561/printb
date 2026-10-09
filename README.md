@@ -11,7 +11,7 @@ shape without knowing the file format.
 </p>
 
 Black is null padding, green is control bytes, blue is printable ASCII, red is
-high-byte data, and white is `0xff`.
+high-byte data, and white is `0xff`. Gray fills the rest of a partial last row.
 
 ## Install
 

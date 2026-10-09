@@ -26,13 +26,18 @@ fn byte_color(byte: u8) -> Rgb<u8> {
     }
 }
 
+/// Cells past the end of the input in a partial last row. No byte maps to
+/// this gray, so padding is not mistaken for 0x00.
+const PADDING: Rgb<u8> = Rgb([128, 128, 128]);
+
 /// Lay `buf` out row-major: byte `i` is at column `i % width`, row `i / width`,
-/// each drawn as a `PIXEL_SCALE` square. Missing tail bytes render as 0x00.
+/// each drawn as a `PIXEL_SCALE` square. Missing tail cells render as `PADDING`.
 fn render(buf: &[u8], width: u32) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let w = width;
     let h = (buf.len() as f32 / w as f32).ceil() as u32;
     let img = ImageBuffer::from_fn(w, h, |x, y| {
-        byte_color(buf.get((y * w + x) as usize).copied().unwrap_or(0))
+        buf.get((y * w + x) as usize)
+            .map_or(PADDING, |&byte| byte_color(byte))
     });
     imageops::resize(
         &img,
@@ -138,6 +143,23 @@ mod tests {
         assert_eq!(px(2, 0), Rgb([32, 96, 161]));
         assert_eq!(px(0, 1), Rgb([0, 0, 0]));
         assert_eq!(px(1, 1), Rgb([255, 255, 255]));
+    }
+
+    #[test]
+    fn partial_last_row_padding_is_not_drawn_as_null_bytes() {
+        // Three bytes at width 2 leave one cell past the end of the file. The
+        // legend reserves black for 0x00, so padding must look different.
+        let img = render(&[0x00, b'A', 0x00], 2);
+        let px = |col: u32, row: u32| *img.get_pixel(col * PIXEL_SCALE, row * PIXEL_SCALE);
+        assert_eq!(px(0, 1), Rgb([0, 0, 0]));
+        assert_ne!(px(1, 1), Rgb([0, 0, 0]));
+        for byte in 0..=u8::MAX {
+            assert_ne!(
+                px(1, 1),
+                byte_color(byte),
+                "padding collides with byte {byte:#04x}"
+            );
+        }
     }
 
     #[test]
