@@ -74,7 +74,8 @@ fn main() -> io::Result<()> {
         .arg(
             Arg::new("width")
                 .short('w')
-                .help("number of bytes image width")
+                .help("number of bytes image width (must be positive)")
+                .value_parser(clap::value_parser!(u32).range(1..))
                 .num_args(1)
                 .default_value("64"),
         )
@@ -82,6 +83,7 @@ fn main() -> io::Result<()> {
             Arg::new("limit")
                 .short('n')
                 .help("limit number of bytes to read")
+                .value_parser(clap::value_parser!(u64))
                 .num_args(1),
         )
         .arg(
@@ -89,6 +91,7 @@ fn main() -> io::Result<()> {
                 .short('s')
                 .long("skip")
                 .help("number of bytes to skip before rendering")
+                .value_parser(clap::value_parser!(u64))
                 .num_args(1)
                 .default_value("0"),
         )
@@ -102,18 +105,12 @@ fn main() -> io::Result<()> {
         .get_matches();
 
     let file = matches.get_one::<String>("file").unwrap();
-    let width = matches.get_one::<String>("width").unwrap();
-    let limit = matches
-        .get_one::<String>("limit")
-        .map(|n| n.parse::<u64>().unwrap());
-    let skip = matches
-        .get_one::<String>("skip")
-        .unwrap()
-        .parse::<u64>()
-        .unwrap();
+    let width = *matches.get_one::<u32>("width").unwrap();
+    let limit = matches.get_one::<u64>("limit").copied();
+    let skip = *matches.get_one::<u64>("skip").unwrap();
     let out = matches.get_one::<String>("out").unwrap();
 
-    print_file(file, limit, skip, width.parse().unwrap(), out)
+    print_file(file, limit, skip, width, out)
 }
 
 #[cfg(test)]
