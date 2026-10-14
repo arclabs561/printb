@@ -30,11 +30,16 @@ fn byte_color(byte: u8) -> Rgb<u8> {
 /// this gray, so padding is not mistaken for 0x00.
 const PADDING: Rgb<u8> = Rgb([128, 128, 128]);
 
+/// Number of rows for a positive byte-grid width, saturated to image dimensions.
+fn row_count(len: usize, width: u32) -> u32 {
+    len.div_ceil(width as usize).min(u32::MAX as usize) as u32
+}
+
 /// Lay `buf` out row-major: byte `i` is at column `i % width`, row `i / width`,
 /// each drawn as a `PIXEL_SCALE` square. Missing tail cells render as `PADDING`.
 fn render(buf: &[u8], width: u32) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let w = width;
-    let h = (buf.len() as f32 / w as f32).ceil() as u32;
+    let h = row_count(buf.len(), w);
     let img = ImageBuffer::from_fn(w, h, |x, y| {
         buf.get((y * w + x) as usize)
             .map_or(PADDING, |&byte| byte_color(byte))
@@ -115,10 +120,38 @@ fn main() -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{byte_color, print_file, render, PIXEL_SCALE};
+    use super::{byte_color, print_file, render, row_count, PIXEL_SCALE};
     use image::Rgb;
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn row_count_covers_every_byte_at_precision_boundary() {
+        // 16,777,217 = 64 * 262,144 + 1: the final byte needs another row.
+        // These scalar lengths never allocate input buffers or images.
+        for (len, width, expected) in [
+            (16_777_217, 64, 262_145),
+            (16_777_216, 64, 262_144),
+            (16_777_215, 64, 262_144),
+            (16_777_217, 1, 16_777_217),
+            (16_777_217, 3, 5_592_406),
+            (3, 2, 2),
+            (1, 64, 1),
+        ] {
+            let rows = row_count(len, width);
+            assert_eq!(rows, expected, "length {len}, width {width}");
+            let capacity = u128::from(rows) * u128::from(width);
+            let previous_capacity = u128::from(rows - 1) * u128::from(width);
+            assert!(previous_capacity < len as u128);
+            assert!(len as u128 <= capacity);
+        }
+    }
+
+    #[test]
+    fn row_count_preserves_empty_and_saturated_dimensions() {
+        assert_eq!(row_count(0, 64), 0);
+        assert_eq!(row_count(usize::MAX, 1), u32::MAX);
+    }
 
     #[test]
     fn maps_common_byte_classes_to_distinct_colors() {
