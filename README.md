@@ -63,7 +63,7 @@ cargo run -- target/example-after.bin -n 4096 -w 64 -o examples/patched.png
   byte plots, entropy, byte frequency, strings, and n-grams as file-independent
   views of unknown data.
 - [Christopher Domas, The Future of RE: Dynamic Binary Visualization](https://www.youtube.com/watch?v=4bM3Gut1hIk):
-  the well-known talk that connects visual pattern recognition to reverse
+  a talk that connects visual pattern recognition to reverse
   engineering practice.
 - [CantorDust](https://inside.battelle.org/blog-details/battelle-publishes-open-source-binary-visualization-tool):
   a Ghidra plugin for digraph and Hilbert-style binary visualization.
